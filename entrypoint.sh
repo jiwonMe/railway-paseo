@@ -1,6 +1,13 @@
 #!/bin/sh
 set -e
 
+# Fix Railway volume permissions (volume is mounted as root)
+if [ -d "/home/paseo" ]; then
+  echo "Fixing permissions on /home/paseo ..."
+  chown -R paseo:paseo /home/paseo 2>/dev/null || true
+  chmod -R u+rwX /home/paseo 2>/dev/null || true
+fi
+
 # Start the original Paseo entrypoint in the background
 /usr/local/bin/paseo-docker-entrypoint "$@" &
 DAEMON_PID=$!
@@ -33,7 +40,6 @@ echo "Pairing QR & Link (scan with Paseo mobile app):"
 echo ""
 
 # Try to enable relay and print QR
-# Run as the paseo user if possible
 if command -v su >/dev/null 2>&1; then
   su -s /bin/sh paseo -c "paseo daemon pair --relay --json 2>/dev/null || paseo daemon pair --relay 2>/dev/null || echo 'Could not generate pairing info yet. Run: paseo daemon pair --relay'" || true
 else
