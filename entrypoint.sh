@@ -25,19 +25,12 @@ if [ -z "$PASEO_TRUSTED_PROXIES" ]; then
   export PASEO_TRUSTED_PROXIES="true"
 fi
 
-# Optional: load keys saved by auth-helper
+# Load keys saved by plugin
 if [ -f /home/paseo/.paseo/.env.auth ]; then
   echo "Loading keys from .env.auth"
   set -a
   . /home/paseo/.paseo/.env.auth
   set +a
-fi
-
-# Install Connect plugin if present in the image
-if [ -d /opt/paseo-connect ]; then
-  echo "Installing Paseo Connect plugin..."
-  su -s /bin/sh paseo -c "paseo plugin install /opt/paseo-connect --id paseo-connect" || \
-    echo "(plugin install failed or already installed)"
 fi
 
 echo "Starting Paseo daemon..."
@@ -52,7 +45,6 @@ fi
 if [ -n "$ORIG" ]; then
   "$ORIG" "$@" &
 else
-  # Fallback
   su -s /bin/sh paseo -c "paseo daemon run --listen $PASEO_LISTEN --web-ui" &
 fi
 DAEMON_PID=$!
@@ -72,6 +64,15 @@ done
 
 if [ "$READY" -eq 0 ]; then
   echo "Warning: health check timed out."
+fi
+
+# Install plugin AFTER daemon is ready
+if [ -d /opt/paseo-connect ]; then
+  echo "Installing Paseo Connect plugin..."
+  su -s /bin/sh paseo -c "paseo plugin install /opt/paseo-connect" 2>&1 || \
+    su -s /bin/sh paseo -c "paseo plugin add github:jiwonMe/paseo-connect" 2>&1 || \
+    echo "(plugin install failed)"
+  su -s /bin/sh paseo -c "paseo plugin ls" 2>&1 || true
 fi
 
 echo ""
@@ -102,13 +103,13 @@ echo ""
 
 echo "Pairing (relay):"
 if command -v su >/dev/null 2>&1; then
-  su -s /bin/sh paseo -c "paseo daemon pair --relay 2>&1" || echo "(pair failed — try later)"
+  su -s /bin/sh paseo -c "paseo daemon pair --relay 2>&1" || echo "(pair failed)"
 else
   paseo daemon pair --relay 2>&1 || true
 fi
 
 echo ""
-echo "Connect plugin: open the Connect item in the sidebar after login."
+echo "Connect plugin: check sidebar after login."
 echo "========================================"
 echo ""
 
