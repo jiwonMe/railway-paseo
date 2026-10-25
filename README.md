@@ -1,42 +1,53 @@
-# Railway Template for Paseo Daemon
+# Railway Template for Paseo
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/)
 
-Self-hosted Paseo daemon (coding agent orchestrator) deploy template for Railway.
+Self-hosted Paseo daemon with agent CLIs (Claude Code, Codex, OpenCode) and GitHub CLI, optimized for Railway.
 
-Paseo lets you orchestrate Claude Code, Codex, OpenCode, Pi and more from desktop, mobile, web and CLI. The official Docker image runs the daemon and serves the bundled web UI.
+## Features
 
-## Quick Deploy
+- Official Paseo image + pre-installed agents
+- Auto-fix volume permissions on startup
+- Connection info + pairing link printed to Deploy Logs
+- Healthcheck at `/api/health`
+- Recommended variables using Railway reference syntax
 
-1. In Railway, create a new project.
-2. Add a service from Docker Image: `ghcr.io/getpaseo/paseo:latest`
-3. Set variables:
-   - `PASEO_PASSWORD`: a strong password (required)
-   - `PASEO_LISTEN`: `0.0.0.0:$PORT`
-   - `PASEO_HOSTNAMES`: your Railway domain (e.g. `${{RAILWAY_PUBLIC_DOMAIN}}`)
-   - `PASEO_WEB_UI_ENABLED`: `true`
-4. Add a Volume mounted at `/home/paseo` (required for persistent state and credentials).
-5. Enable Public Networking and generate a domain. Set target port to 6767 or rely on `$PORT`.
-6. Open the generated domain in a browser and connect with the password.
+## Quick Start (Template)
 
-## Optional: Custom Image with Agent CLIs
+1. Click the Deploy button above (or deploy this repo).
+2. Railway will ask for variables. Recommended:
+   - `PASEO_PASSWORD` = `${{secret(32)}}` (auto-generated)
+   - `PASEO_HOSTNAMES` = `${{RAILWAY_PUBLIC_DOMAIN}}`
+   - `PASEO_TRUSTED_PROXIES` = `true`
+3. Attach a Volume mounted at `/home/paseo`.
+4. Generate a public domain (target port 6767).
+5. Open the domain and log in with the password.
 
-Edit the `Dockerfile` to install agents, then deploy from this GitHub repo instead of the base image.
+## Variables
+
+| Variable | Recommended Value | Purpose |
+|----------|-------------------|---------|
+| `PASEO_PASSWORD` | `${{secret(32)}}` | Daemon password |
+| `PASEO_HOSTNAMES` | `${{RAILWAY_PUBLIC_DOMAIN}}` | Allowlist for the public domain |
+| `PASEO_TRUSTED_PROXIES` | `true` | Trust Railway proxy headers |
+| `PASEO_LISTEN` | `0.0.0.0:${{PORT}}` | Bind address |
+| `ANTHROPIC_API_KEY` | (optional) | Claude Code |
+| `OPENAI_API_KEY` | (optional) | Codex |
+| `GH_TOKEN` | (optional) | GitHub CLI |
+
+## After Deploy
+
+- Check **Deploy Logs** for the Web UI URL and pairing QR/link.
+- Volume at `/home/paseo` persists state and agent credentials across restarts.
 
 ## Files
 
-- `Dockerfile` — optional custom image that can include agent CLIs
-- `railway.toml` — config-as-code example
+- `Dockerfile` — agents + gh + custom entrypoint
+- `entrypoint.sh` — permission fix + connection info
+- `railway.toml` — config as code
+- `auth-helper/` — authentication guidance page
 
 ## Official Docs
 
-- https://paseo.sh/docs/docker
 - https://paseo.sh
-
-## Security
-
-Always set `PASEO_PASSWORD`. The daemon is trusted code with access to the host. Only install plugins and agents you trust.
-
----
-
-**Note:** After creating the template in the Railway dashboard, update the Deploy button URL above with your template code.
+- https://paseo.sh/docs/docker

@@ -8,27 +8,18 @@ healthcheckTimeout = 180
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# Recommended Variables (set these in Railway service Variables):
+# === Recommended Variables (set in Railway dashboard) ===
 #
 # PASEO_PASSWORD=${{secret(32)}}
-#   Strong password, auto-generated on first deploy.
-#
 # PASEO_HOSTNAMES=${{RAILWAY_PUBLIC_DOMAIN}}
-#   Allows the public domain. Add custom domains with a comma if needed.
-#
 # PASEO_TRUSTED_PROXIES=true
-#   Trust Railway's reverse proxy headers.
-#
 # PASEO_WEB_UI_ENABLED=true
 # PASEO_LISTEN=0.0.0.0:${{PORT}}
 #
-# Optional agent keys (set if you want agents ready immediately):
+# Optional:
 # ANTHROPIC_API_KEY=
 # OPENAI_API_KEY=
 # GH_TOKEN=
 #
-# Volume:
-# Mount a Volume at /home/paseo (required for state and credentials).
-#
-# Networking:
-# Generate a public domain. Target port = 6767.
+# Volume: mount at /home/paseo
+# Networking: public domain, target port 6767
