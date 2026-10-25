@@ -33,6 +33,13 @@ if [ -f /home/paseo/.paseo/.env.auth ]; then
   set +a
 fi
 
+# Install Connect plugin if present in the image
+if [ -d /opt/paseo-connect ]; then
+  echo "Installing Paseo Connect plugin..."
+  su -s /bin/sh paseo -c "paseo plugin install /opt/paseo-connect --id paseo-connect" || \
+    echo "(plugin install failed or already installed)"
+fi
+
 echo "Starting Paseo daemon..."
 
 ORIG=""
@@ -101,8 +108,7 @@ else
 fi
 
 echo ""
-echo "========================================"
-echo "  End of Connection Info"
+echo "Connect plugin: open the Connect item in the sidebar after login."
 echo "========================================"
 echo ""
 
