@@ -1,10 +1,14 @@
 FROM ghcr.io/getpaseo/paseo:latest
 
-# Optional: install common agent CLIs
-# Uncomment and customize as needed
-# USER root
-# RUN npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai || true
-# USER paseo
+USER root
 
-# The base image already runs the daemon and serves the web UI on 0.0.0.0:6767
-# Use PASEO_LISTEN=0.0.0.0:$PORT for Railway
+# Install common coding agent CLIs
+RUN npm install -g \
+    @anthropic-ai/claude-code \
+    @openai/codex \
+    opencode-ai || true
+
+# Base image switches back to the paseo user and starts the daemon
+# Web UI + daemon listen on 0.0.0.0:6767
+
+EXPOSE 6767
