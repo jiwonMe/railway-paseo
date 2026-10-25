@@ -12,6 +12,19 @@ fi
 mkdir -p /home/paseo/.paseo
 chown -R paseo:paseo /home/paseo/.paseo 2>/dev/null || true
 
+# Enable plugins by default in config if not present
+CONFIG=/home/paseo/.paseo/config.json
+if [ ! -f "$CONFIG" ]; then
+  echo '{"pluginsEnabled": true}' > "$CONFIG"
+  chown paseo:paseo "$CONFIG"
+  echo "Created config with pluginsEnabled=true"
+else
+  # Best-effort enable if missing
+  if ! grep -q 'pluginsEnabled' "$CONFIG" 2>/dev/null; then
+    echo "Note: ensure pluginsEnabled is true in config.json"
+  fi
+fi
+
 # Apply Railway-friendly defaults if not set
 export PASEO_LISTEN="${PASEO_LISTEN:-0.0.0.0:${PORT:-6767}}"
 export PASEO_WEB_UI_ENABLED="${PASEO_WEB_UI_ENABLED:-true}"
@@ -25,7 +38,7 @@ if [ -z "$PASEO_TRUSTED_PROXIES" ]; then
   export PASEO_TRUSTED_PROXIES="true"
 fi
 
-# Load keys saved by plugin
+# Optional: load keys saved by auth-helper
 if [ -f /home/paseo/.paseo/.env.auth ]; then
   echo "Loading keys from .env.auth"
   set -a
@@ -66,13 +79,13 @@ if [ "$READY" -eq 0 ]; then
   echo "Warning: health check timed out."
 fi
 
-# Install plugin AFTER daemon is ready
+# Install Connect plugin AFTER daemon is ready
 if [ -d /opt/paseo-connect ]; then
   echo "Installing Paseo Connect plugin..."
-  su -s /bin/sh paseo -c "paseo plugin install /opt/paseo-connect" 2>&1 || \
-    su -s /bin/sh paseo -c "paseo plugin add github:jiwonMe/paseo-connect" 2>&1 || \
-    echo "(plugin install failed)"
-  su -s /bin/sh paseo -c "paseo plugin ls" 2>&1 || true
+  su -s /bin/sh paseo -c "paseo plugin install /opt/paseo-connect --id paseo-connect" || \
+    echo "(plugin install failed or already installed)"
+  # Reload to pick it up
+  su -s /bin/sh paseo -c "paseo plugin reload paseo-connect || true" || true
 fi
 
 echo ""
@@ -103,13 +116,13 @@ echo ""
 
 echo "Pairing (relay):"
 if command -v su >/dev/null 2>&1; then
-  su -s /bin/sh paseo -c "paseo daemon pair --relay 2>&1" || echo "(pair failed)"
+  su -s /bin/sh paseo -c "paseo daemon pair --relay 2>&1" || echo "(pair failed — try later)"
 else
   paseo daemon pair --relay 2>&1 || true
 fi
 
 echo ""
-echo "Connect plugin: check sidebar after login."
+echo "Connect plugin: open the Connect item in the sidebar after login."
 echo "========================================"
 echo ""
 
