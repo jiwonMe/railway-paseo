@@ -4,12 +4,31 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/api/health"
-healthcheckTimeout = 120
+healthcheckTimeout = 180
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 5
+restartPolicyMaxRetries = 10
 
-# Notes:
-# - Volume must be mounted at /home/paseo in Railway service settings
-# - Set PASEO_HOSTNAMES=${{RAILWAY_PUBLIC_DOMAIN}}
-# - Set PASEO_TRUSTED_PROXIES=true (or appropriate range) for Railway proxy
-# - Target port should be 6767
+# Recommended Variables (set these in Railway service Variables):
+#
+# PASEO_PASSWORD=${{secret(32)}}
+#   Strong password, auto-generated on first deploy.
+#
+# PASEO_HOSTNAMES=${{RAILWAY_PUBLIC_DOMAIN}}
+#   Allows the public domain. Add custom domains with a comma if needed.
+#
+# PASEO_TRUSTED_PROXIES=true
+#   Trust Railway's reverse proxy headers.
+#
+# PASEO_WEB_UI_ENABLED=true
+# PASEO_LISTEN=0.0.0.0:${{PORT}}
+#
+# Optional agent keys (set if you want agents ready immediately):
+# ANTHROPIC_API_KEY=
+# OPENAI_API_KEY=
+# GH_TOKEN=
+#
+# Volume:
+# Mount a Volume at /home/paseo (required for state and credentials).
+#
+# Networking:
+# Generate a public domain. Target port = 6767.
