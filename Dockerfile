@@ -17,19 +17,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# Install agent CLIs
+# Install agent CLIs via npm
 RUN npm install -g \
     @anthropic-ai/claude-code \
     @openai/codex \
     opencode-ai || true
 
-# Include Paseo Connect plugin
-RUN git clone --depth 1 https://github.com/jiwonMe/paseo-connect.git /opt/paseo-connect || true
+# Pre-install Paseo Connect plugin
+RUN git clone --depth 1 https://github.com/jiwonMe/paseo-connect.git /opt/paseo-connect \
+    && mkdir -p /home/paseo/.paseo/plugins \
+    && ln -s /opt/paseo-connect /home/paseo/.paseo/plugins/paseo-connect || true
 
-# Custom entrypoint
+# Custom entrypoint: fixes volume permissions + prints connection info
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Start as root so the entrypoint can chown the Railway volume
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 EXPOSE 6767
