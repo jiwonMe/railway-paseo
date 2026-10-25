@@ -8,7 +8,11 @@ RUN npm install -g \
     @openai/codex \
     opencode-ai || true
 
-# Base image switches back to the paseo user and starts the daemon
-# Web UI + daemon listen on 0.0.0.0:6767
+# Copy and set entrypoint that fixes /home/paseo permissions
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Start as root so the entrypoint can chown the Railway volume
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 EXPOSE 6767
