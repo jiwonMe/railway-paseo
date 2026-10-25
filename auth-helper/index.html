@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Paseo Auth Helper</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    button { padding: 10px 16px; background: #0969da; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    code { background: #f6f8fa; padding: 2px 6px; border-radius: 4px; }
+    pre { background: #f6f8fa; padding: 12px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Paseo Auth Helper</h1>
+  <p>Railway 콘테이너에서 에이전트 인증을 도와주는 페이지입니다.</p>
+
+  <div class="card">
+    <h2>GitHub CLI</h2>
+    <p>1. Railway Shell에서 아래 명령을 실행하세요:</p>
+    <pre>gh auth login --web</pre>
+    <p>2. 화면에 나오는 <strong>one-time code</strong>를 복사하세요.</p>
+    <p>3. <a href="https://github.com/login/device" target="_blank">https://github.com/login/device</a> 에 들어가 코드를 입력하세요.</p>
+  </div>
+
+  <div class="card">
+    <h2>Claude Code</h2>
+    <p><strong>방법 A</strong> — API Key (가장 간편)</p>
+    <p>Railway Variables에 추가:</p>
+    <pre>ANTHROPIC_API_KEY=sk-ant-...</pre>
+    <p><strong>방법 B</strong> — OAuth Token</p>
+    <p>로컬 컴퓨터에서 <code>claude setup-token</code> 실행 후 토큰을 Railway에 넣으세요:</p>
+    <pre>CLAUDE_CODE_OAUTH_TOKEN=...</pre>
+  </div>
+
+  <div class="card">
+    <h2>Codex (OpenAI)</h2>
+    <p><strong>방법 A</strong> — API Key</p>
+    <pre>OPENAI_API_KEY=sk-...</pre>
+    <p><strong>방법 B</strong> — Device Code</p>
+    <p>Shell에서:</p>
+    <pre>codex login --device-auth</pre>
+  </div>
+
+  <div class="card">
+    <h2>저장 위치</h2>
+    <p>인증 정보는 <code>/home/paseo</code> 볼륨에 저장됩니다. 재배포 후에도 유지됩니다.</p>
+  </div>
+
+  <p style="color:#666; font-size:14px;">
+    이 페이지는 안내용입니다. 실제 로그인은 Railway Shell이나 Variables에서 진행하세요.
+  </p>
+</body>
+</html>
