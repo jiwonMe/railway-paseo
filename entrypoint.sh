@@ -1,48 +1,77 @@
 #!/bin/sh
-set -e
+set +e
 
-# Always print something immediately so it shows in Railway logs
+echo "=== Paseo Railway Entrypoint ==="
+echo "Fixing permissions on /home/paseo ..."
+if [ -d /home/paseo ]; then
+  chown -R paseo:paseo /home/paseo 2>/dev/null || true
+  chmod -R u+rwX /home/paseo 2>/dev/null || true
+fi
+mkdir -p /home/paseo/.paseo
+chown -R paseo:paseo /home/paseo/.paseo 2>/dev/null || true
+
+echo "Starting Paseo daemon..."
+
+# Try common entrypoint locations
+if [ -x /usr/local/bin/paseo-docker-entrypoint ]; then
+  /usr/local/bin/paseo-docker-entrypoint "$@" &
+elif [ -x /entrypoint.sh ]; then
+  /entrypoint.sh "$@" &
+elif command -v paseo >/dev/null 2>&1; then
+  # Fallback: run daemon directly
+  su -s /bin/sh paseo -c "paseo daemon run --listen 0.0.0.0:6767 --web-ui" &
+else
+  echo "ERROR: Could not find Paseo entrypoint or binary"
+  exit 1
+fi
+DAEMON_PID=$!
+
+echo "Daemon PID: $DAEMON_PID"
+echo "Waiting for daemon to be ready (up to 2 minutes)..."
+READY=0
+for i in $(seq 1 60); do
+  if wget -q -O /dev/null --timeout=2 http://127.0.0.1:6767/api/health 2>/dev/null || \
+     curl -sf --max-time 2 http://127.0.0.1:6767/api/health >/dev/null 2>&1; then
+    echo "Daemon is ready."
+    READY=1
+    break
+  fi
+  sleep 2
+done
+
+if [ "$READY" -eq 0 ]; then
+  echo "Warning: Daemon health check timed out. Continuing anyway..."
+fi
+
 echo ""
 echo "========================================"
-echo "  Paseo starting on Railway"
+echo "  Paseo Connection Info"
 echo "========================================"
+echo ""
 
 if [ -n "$RAILWAY_PUBLIC_DOMAIN" ]; then
-  echo "Web UI: https://$RAILWAY_PUBLIC_DOMAIN"
+  echo "Web UI:"
+  echo "  https://$RAILWAY_PUBLIC_DOMAIN"
+  echo ""
 else
-  echo "Web UI: (set RAILWAY_PUBLIC_DOMAIN or open the public domain)"
+  echo "Web UI: (set RAILWAY_PUBLIC_DOMAIN or check Railway networking)"
+  echo ""
 fi
 
-echo "Password: (from PASEO_PASSWORD variable)"
+echo "Pairing info (enable relay first with PASEO_RELAY_ENABLED=true):"
 echo ""
 
-# Fix volume permissions if running as root
-if [ -d "/home/paseo" ] && [ "$(id -u)" = "0" ]; then
-  echo "Fixing permissions on /home/paseo ..."
-  chown -R paseo:paseo /home/paseo 2>/dev/null || true
-fi
-
-# Try to print pairing info in the background after a delay
-(
-  sleep 15
-  echo ""
-  echo "========== Pairing Info =========="
-  if command -v paseo >/dev/null 2>&1; then
-    paseo daemon pair --relay 2>&1 || echo "(Pairing not ready yet. Run 'paseo daemon pair --relay' in shell)"
-  else
-    echo "paseo CLI not found"
-  fi
-  echo "=================================="
-  echo ""
-) &
-
-# Exec the original Paseo entrypoint (pass through all arguments)
-# The base image entrypoint handles dropping privileges and starting the daemon
-if [ -x /usr/local/bin/paseo-docker-entrypoint ]; then
-  exec /usr/local/bin/paseo-docker-entrypoint "$@"
-elif command -v paseo >/dev/null 2>&1; then
-  exec paseo daemon run "$@"
+if command -v su >/dev/null 2>&1; then
+  su -s /bin/sh paseo -c "paseo daemon pair --relay 2>&1" || echo "(pair command failed — try manually later)"
 else
-  echo "Could not find Paseo entrypoint"
-  exec "$@"
+  paseo daemon pair --relay 2>&1 || echo "(pair command failed)"
 fi
+
+echo ""
+echo "========================================"
+echo "  End of Connection Info"
+echo "========================================"
+echo ""
+
+# Wait for the daemon process
+wait $DAEMON_PID
