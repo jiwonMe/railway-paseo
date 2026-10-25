@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         gnupg \
+        git \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
         | gpg --dearmor -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
@@ -16,17 +17,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# Install agent CLIs via npm
+# Install agent CLIs
 RUN npm install -g \
     @anthropic-ai/claude-code \
     @openai/codex \
     opencode-ai || true
 
-# Custom entrypoint: fixes volume permissions + prints connection info
+# Include Paseo Connect plugin
+RUN git clone --depth 1 https://github.com/jiwonMe/paseo-connect.git /opt/paseo-connect || true
+
+# Custom entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Start as root so the entrypoint can chown the Railway volume
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 EXPOSE 6767
